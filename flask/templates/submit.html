@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralGuard - Analysis Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #050505;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-blur: blur(30px);
+            
+            /* Status Colors */
+            --status-color: #00f0ff;
+            --status-glow: rgba(0, 240, 255, 0.2);
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary); color: var(--text-main);
+            min-height: 100vh; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        /* Ambient Background */
+        .ambient-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
+        }
+
+        .orb {
+            position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.5;
+            animation: pulse-orb 10s infinite alternate; left: 50%; top: 50%;
+            transform: translate(-50%, -50%); width: 600px; height: 600px;
+            background: var(--status-color);
+            transition: background 1s ease;
+        }
+
+        @keyframes pulse-orb {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.3; }
+            100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.6; }
+        }
+
+        /* Navbar */
+        nav {
+            position: fixed; top: 0; width: 100%; padding: 20px 50px;
+            display: flex; justify-content: space-between; align-items: center; z-index: 100;
+        }
+        .logo { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: white; text-decoration: none; }
+
+        /* Report Card */
+        .report-card {
+            width: 100%; max-width: 600px; padding: 50px; border-radius: 24px;
+            background: var(--glass-bg); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border);
+            text-align: center; position: relative; z-index: 10;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 40px var(--status-glow);
+            animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; transform: translateY(40px);
+        }
+
+        @keyframes slide-up { to { opacity: 1; transform: translateY(0); } }
+
+        .icon-ring {
+            width: 120px; height: 120px; margin: 0 auto 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.4); border: 2px solid var(--status-color);
+            font-size: 3rem; position: relative;
+            box-shadow: 0 0 30px var(--status-glow), inset 0 0 20px var(--status-glow);
+        }
+        
+        .icon-ring::after {
+            content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px;
+            border-radius: 50%; border: 1px dashed var(--status-color); animation: spin 10s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .verdict { font-size: 2rem; font-weight: 900; margin-bottom: 10px; color: var(--status-color); letter-spacing: -1px; }
+        .sub-text { color: var(--text-muted); font-size: 1rem; margin-bottom: 40px; }
+
+        .stats-row {
+            display: flex; justify-content: center; gap: 40px; margin-bottom: 40px;
+            padding-top: 30px; border-top: 1px solid var(--glass-border);
+        }
+
+        .stat-item { display: flex; flex-direction: column; align-items: center; }
+        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: white; }
+        .stat-lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+        .action-btns { display: flex; gap: 20px; justify-content: center; }
+        .btn {
+            padding: 14px 30px; border-radius: 12px; font-weight: 700; font-size: 1rem; text-decoration: none; cursor: pointer; transition: all 0.3s;
+        }
+        .btn-primary { background: var(--status-color); color: #000; box-shadow: 0 10px 25px var(--status-glow); }
+        .btn-primary:hover { transform: translateY(-3px); filter: brightness(1.2); }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    </style>
+</head>
+<body>
+
+    <!-- Inject data from Flask -->
+    <div id="data-result" style="display:none;">{{ result }}</div>
+    <div id="data-class" style="display:none;">{{ result_class }}</div>
+
+    <div class="ambient-bg">
+        <div class="orb" id="glowOrb"></div>
+    </div>
+
+    <nav>
+        <a href="/" class="logo">NeuralGuard</a>
+    </nav>
+
+    <div class="report-card">
+        <div class="icon-ring" id="resultIcon">⏱</div>
+        <h1 class="verdict" id="resultTitle">Analyzing...</h1>
+        <p class="sub-text" id="resultSub">Neural Engine has completed the evaluation.</p>
+
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-val" id="riskLevel">--</div>
+                <div class="stat-lbl">Risk Level</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val">99.8%</div>
+                <div class="stat-lbl">Confidence</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val">XGBoost</div>
+                <div class="stat-lbl">Model</div>
+            </div>
+        </div>
+
+        <div class="action-btns">
+            <a href="/predict" class="btn btn-primary" id="btnPrimary">Scan Another</a>
+            <a href="/" class="btn btn-secondary">Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const rawResult = document.getElementById('data-result').innerText;
+            const resClass = document.getElementById('data-class').innerText; // "fraud" or "safe"
+
+            const isFraud = resClass === 'fraud';
+
+            const color = isFraud ? '#ff003c' : '#00ff88';
+            const glow = isFraud ? 'rgba(255, 0, 60, 0.3)' : 'rgba(0, 255, 136, 0.2)';
+
+            // Update CSS Variables
+            document.documentElement.style.setProperty('--status-color', color);
+            document.documentElement.style.setProperty('--status-glow', glow);
+
+            // Update DOM Elements
+            document.getElementById('resultIcon').innerText = isFraud ? '⚠' : '✓';
+            document.getElementById('resultTitle').innerText = isFraud ? 'FRAUD DETECTED' : 'CLEARED';
+            document.getElementById('resultSub').innerText = rawResult.replace('⚠️', '').replace('✅', '').trim();
+            document.getElementById('riskLevel').innerText = isFraud ? 'CRITICAL' : 'LOW';
+            document.getElementById('riskLevel').style.color = color;
+        });
+    </script>
+</body>
+</html>
